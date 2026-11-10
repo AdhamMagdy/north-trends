@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الأكثر بحثاً في الشمال</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--text:#1c2430;--muted:#6b7280;--line:#e4e0d6;--accent:#c2410c}
+@media (prefers-color-scheme:dark){:root{--bg:#14181f;--card:#1d232d;--text:#eef1f5;--muted:#9aa4b2;--line:#2c3441;--accent:#fb923c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",Tahoma,"Noto Sans Arabic",Arial,sans-serif;line-height:1.6}
+main{max-width:680px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--muted);font-size:.85rem;margin:0 0 14px}
+.row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 14px;border-radius:99px;white-space:nowrap}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px}
+.item{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.rank{color:var(--muted);font-weight:700;text-align:center}
+.q{font-weight:600}
+.track{height:6px;background:var(--line);border-radius:9px;margin-top:6px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:9px}
+.chg{font-size:.82rem;font-weight:700;color:var(--accent);direction:ltr}
+.note{color:var(--muted);font-size:.8rem;margin-top:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>🔎 الأكثر بحثاً في الشمال</h1>
+<p class="sub" id="upd">جاري التحميل…</p>
+<div class="row" id="cities"></div>
+<div class="row" id="periods"></div>
+<div class="card" id="list"></div>
+<p class="note">الأرقام نسبية من 0 إلى 100 وليست عدد عمليات البحث الفعلي. النتائج هي أكثر عمليات البحث ارتباطاً باسم المدينة داخل المغرب.</p>
+</main>
+<script>
+var DATA=null, city=null, period="24h";
+var PERIODS={"24h":"آخر 24 ساعة","7d":"آخر 7 أيام"};
+function btn(label,on,fn){var b=document.createElement("button");b.textContent=label;b.setAttribute("aria-pressed",on);b.onclick=fn;return b}
+function render(){
+  var c=document.getElementById("cities");c.innerHTML="";
+  Object.keys(DATA.cities).forEach(function(k){c.appendChild(btn(k,k===city,function(){city=k;render()}))});
+  var p=document.getElementById("periods");p.innerHTML="";
+  Object.keys(PERIODS).forEach(function(k){p.appendChild(btn(PERIODS[k],k===period,function(){period=k;render()}))});
+  var l=document.getElementById("list");l.innerHTML="";
+  var rows=(DATA.cities[city]||{})[period]||[];
+  if(!rows.length){l.innerHTML='<p class="sub" style="padding:12px 0">لا توجد بيانات كافية حالياً.</p>';return}
+  rows.forEach(function(r,i){
+    var d=document.createElement("div");d.className="item";
+    d.innerHTML='<div class="rank">'+(i+1)+'</div><div><div class="q"></div><div class="track"><div class="fill" style="width:'+Math.min(100,+r[1]||0)+'%"></div></div></div><div class="chg"></div>';
+    d.querySelector(".q").textContent=r[0];
+    d.querySelector(".chg").textContent=r[2]||"";
+    l.appendChild(d);
+  });
+}
+fetch("data.json?t="+Date.now()).then(function(r){return r.json()}).then(function(j){
+  DATA=j;city=Object.keys(j.cities)[0];
+  var u=document.getElementById("upd");
+  u.textContent=j.sample?"بيانات تجريبية — شغّل الـ workflow لتحميل البيانات الحقيقية":"آخر تحديث: "+new Date(j.updated).toLocaleString("ar-MA");
+  render();
+}).catch(function(){document.getElementById("upd").textContent="تعذّر تحميل البيانات."});
+</script>
+</body>
+</html>
